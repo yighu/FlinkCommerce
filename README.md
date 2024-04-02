@@ -12,13 +12,23 @@ This repository contains an Apache Flink application for real-time sales analyti
 ## Installation and Setup
 1. Clone this repository.
 2. Navigate to the repository directory.
-3. Run `docker-compose up` to start the required services (Apache Flink, Elasticsearch, Postgres).
+3. Run `docker-compose up -d` to start the required services (Apache Flink, Elasticsearch, Postgres).
 4. The Sales Transaction Generator `main.py` helps to generate the sales transactions into Kafka.
+
+Get into broker docker and run
+kafka-topics --list --bootstrap-server broker:29092
+see no topic yet.
+Then run main.py and go back to broker docker and run:
+kafka-console-consumer --topic financial_transactions --bootstrap-server broker:29092 --from-beginning
+to see the topic data from the python script
 
 ## Usage
 1. Ensure all Docker containers are up and running.
 2. Run the FlinkCommerce application provided in this repository to perform real-time analytics on financial transactions.
+The command to submit the flink job:
 
+../flink-1.19.0/bin/flink run -c FlinkCommerce.DataStreamJob target/FlinkCommerce-1.0-SNAPSHOT.jar 
+then look at the flink webui: localhost:8081
 ### Application Details
 The `DataStreamJob` class within the `FlinkCommerce` package serves as the main entry point for the Flink application. The application consumes financial transaction data from Kafka, performs various transformations, and stores aggregated results in both Postgres and Elasticsearch.
 
