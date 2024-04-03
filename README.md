@@ -27,7 +27,8 @@ to see the topic data from the python script
 2. Run the FlinkCommerce application provided in this repository to perform real-time analytics on financial transactions.
 The command to submit the flink job:
 
-../flink-1.19.0/bin/flink run -c FlinkCommerce.DataStreamJob target/FlinkCommerce-1.0-SNAPSHOT.jar 
+../flink-1.19.0/bin/flink run -c FlinkCommerce.DataStreamJobJava target/FlinkCommerce-1.0-SNAPSHOT.jar  --Java Version
+../flink-1.19.0/bin/flink run -c FlinkCommerce.DataStreamJobScala target/FlinkCommerce-1.0-SNAPSHOT.jar  --Scala Version
 then look at the flink webui: localhost:8081
 ### Application Details
 The `DataStreamJob` class within the `FlinkCommerce` package serves as the main entry point for the Flink application. The application consumes financial transaction data from Kafka, performs various transformations, and stores aggregated results in both Postgres and Elasticsearch.

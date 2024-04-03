@@ -24,7 +24,6 @@ import Dto.SalesPerDay;
 import Dto.SalesPerMonth;
 import Dto.Transaction;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
-import org.apache.flink.api.connector.sink.Sink;
 import org.apache.flink.connector.elasticsearch.sink.Elasticsearch7SinkBuilder;
 import org.apache.flink.connector.jdbc.JdbcConnectionOptions;
 import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
@@ -43,7 +42,7 @@ import java.sql.Date;
 
 import static utils.JsonUtil.convertTransactionToJson;
 
-public class DataStreamJob {
+public class DataStreamJobJava {
     private static final String jdbcUrl = "jdbc:postgresql://localhost:5432/postgres";
     private static final String username = "postgres";
     private static final String password = "postgres";
@@ -278,6 +277,6 @@ public class DataStreamJob {
         ).name("Elasticsearch Sink");
 
         // Execute program, beginning computation.
-        env.execute("Flink Ecommerce Realtime Streaming");
+        env.execute("Flink Ecommerce Realtime Streaming Java");
     }
 }
