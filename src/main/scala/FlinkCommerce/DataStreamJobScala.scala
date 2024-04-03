@@ -15,7 +15,6 @@ import org.apache.flink.elasticsearch7.shaded.org.elasticsearch.common.xcontent.
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import utils.JsonUtil.convertTransactionToJson
-
 import java.sql.{Date, PreparedStatement}
 
 object DataStreamJobScala extends App {
@@ -31,7 +30,7 @@ object DataStreamJobScala extends App {
 
   val transactionStream : DataStream[Transaction] = env.fromSource(source, WatermarkStrategy.noWatermarks[Transaction], "Kafka source")
 
-  transactionStream.print
+  //transactionStream.print
   val execOptions = new JdbcExecutionOptions.Builder().withBatchSize(1000).withBatchIntervalMs(200).withMaxRetries(5).build
 
   val connOptions = new JdbcConnectionOptions.JdbcConnectionOptionsBuilder().withUrl(jdbcUrl).withDriverName("org.postgresql.Driver").withUsername(username).withPassword(password).build
@@ -86,9 +85,9 @@ object DataStreamJobScala extends App {
     override def getKey(data: SalesPerCategory): String = data.getCategory
   }
    transactionStream.map(transaction => new SalesPerCategory(new Date(System.currentTimeMillis), transaction.getProductCategory, transaction.getTotalAmount))
-     .keyBy(new SalesPerCategorySelector).reduce((salesPerCategory: SalesPerCategory, t1: SalesPerCategory) => {
-      salesPerCategory.setTotalSales(salesPerCategory.getTotalSales  + t1.getTotalSales)
-      salesPerCategory
+     .keyBy(new SalesPerCategorySelector).reduce((s, t) => {
+      s.setTotalSales(s.getTotalSales  + t.getTotalSales)
+      s
   }).addSink(JdbcSink.sink("INSERT INTO sales_per_category(transaction_date, category, total_sales) " + "VALUES (?, ?, ?) " + "ON CONFLICT (transaction_date, category) DO UPDATE SET " + "total_sales = EXCLUDED.total_sales " + "WHERE sales_per_category.category = EXCLUDED.category " + "AND sales_per_category.transaction_date = EXCLUDED.transaction_date",
      new JdbcStatementBuilder[SalesPerCategory] {
        override def accept(preparedStatement: PreparedStatement, salesPerCategory: SalesPerCategory): Unit = {
@@ -107,9 +106,9 @@ object DataStreamJobScala extends App {
       val totalSales = transaction.getTotalAmount
       new SalesPerDay(transactionDate, totalSales)
 
-  }).keyBy(new SalesPerDaySelector).reduce((salesPerDay: SalesPerDay, t1: SalesPerDay) => {
-      salesPerDay.setTotalSales(salesPerDay.getTotalSales + t1.getTotalSales)
-      salesPerDay
+  }).keyBy(new SalesPerDaySelector).reduce((s: SalesPerDay, t: SalesPerDay) => {
+      s.setTotalSales(s.getTotalSales + t.getTotalSales)
+      s
   }).addSink(JdbcSink.sink("INSERT INTO sales_per_day(transaction_date, total_sales) " + "VALUES (?,?) " + "ON CONFLICT (transaction_date) DO UPDATE SET " + "total_sales = EXCLUDED.total_sales " + "WHERE sales_per_day.transaction_date = EXCLUDED.transaction_date",
     new JdbcStatementBuilder[SalesPerDay] {
       override def accept(preparedStatement: PreparedStatement, salesPerDay: SalesPerDay): Unit =   {
@@ -127,9 +126,9 @@ object DataStreamJobScala extends App {
       val totalSales = transaction.getTotalAmount
       new SalesPerMonth(year, month, totalSales)
 
-  }).keyBy(new SalesPerMonthSelector).reduce((salesPerMonth: SalesPerMonth, t1: SalesPerMonth) => {
-      salesPerMonth.setTotalSales(salesPerMonth.getTotalSales + t1.getTotalSales)
-      salesPerMonth
+  }).keyBy(new SalesPerMonthSelector).reduce((s: SalesPerMonth, t: SalesPerMonth) => {
+      s.setTotalSales(s.getTotalSales + t.getTotalSales)
+      s
    
   }).addSink(JdbcSink.sink("INSERT INTO sales_per_month(year, month, total_sales) " + "VALUES (?,?,?) " + "ON CONFLICT (year, month) DO UPDATE SET " + "total_sales = EXCLUDED.total_sales " + "WHERE sales_per_month.year = EXCLUDED.year " + "AND sales_per_month.month = EXCLUDED.month ",
     new JdbcStatementBuilder[SalesPerMonth] {
