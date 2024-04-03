@@ -20,7 +20,11 @@
     <last-used-providers />
   </component>
   <component name="DBNavigator.Project.DatabaseFileManager">
-    <open-files />
+    <open-files>
+      <object connection-id="3c954aee-67bd-4e92-b2ad-d2349b01dd16" object-ref="consoles/Connection" />
+      <object connection-id="3c954aee-67bd-4e92-b2ad-d2349b01dd16" object-ref="schemas/public/tables/sales_per_day" />
+      <object connection-id="3c954aee-67bd-4e92-b2ad-d2349b01dd16" object-ref="schemas/public/tables/sales_per_category" />
+    </open-files>
   </component>
   <component name="DBNavigator.Project.DatabaseSessionManager">
     <connection id="3c954aee-67bd-4e92-b2ad-d2349b01dd16" />

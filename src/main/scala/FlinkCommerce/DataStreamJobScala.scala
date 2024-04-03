@@ -34,47 +34,54 @@ object DataStreamJobScala extends App {
   transactionStream.print
   val execOptions = new JdbcExecutionOptions.Builder().withBatchSize(1000).withBatchIntervalMs(200).withMaxRetries(5).build
 
-  //val connOptions = new JdbcConnectionOptions.JdbcConnectionOptionsBuilder().withUrl(jdbcUrl).withDriverName("org.postgresql.Driver").withUsername(username).withPassword(password).build
-
-  val connOptions = new JdbcConnectionOptions.JdbcConnectionOptionsBuilder().withUrl(jdbcUrl).withDriverName("org.postgresql.Driver").withUsername(username).withPassword(password).build()
+  val connOptions = new JdbcConnectionOptions.JdbcConnectionOptionsBuilder().withUrl(jdbcUrl).withDriverName("org.postgresql.Driver").withUsername(username).withPassword(password).build
 
   //create transactions table
   transactionStream.addSink(JdbcSink.sink("CREATE TABLE IF NOT EXISTS transactions (" + "transaction_id VARCHAR(255) PRIMARY KEY, " + "product_id VARCHAR(255), " + "product_name VARCHAR(255), " + "product_category VARCHAR(255), " + "product_price DOUBLE PRECISION, " + "product_quantity INTEGER, " + "product_brand VARCHAR(255), " + "total_amount DOUBLE PRECISION, " + "currency VARCHAR(255), " + "customer_id VARCHAR(255), " + "transaction_date TIMESTAMP, " + "payment_method VARCHAR(255) " + ")",
-    (preparedStatement: PreparedStatement, transaction: Transaction) => {}.asInstanceOf[JdbcStatementBuilder[Transaction]],
+    new JdbcStatementBuilder[Transaction] {
+      override def accept(t: PreparedStatement, u: Transaction): Unit = {}
+    },
     execOptions,
     connOptions
   )
   ).name("Create Transactions Table Sink")
 
   //create sales_per_category table sink
-  transactionStream.addSink(JdbcSink.sink("CREATE TABLE IF NOT EXISTS sales_per_category (" + "transaction_date DATE, " + "category VARCHAR(255), " + "total_sales DOUBLE PRECISION, " + "PRIMARY KEY (transaction_date, category)" + ")", (preparedStatement: PreparedStatement, transaction: Transaction) => {
-   
-  }.asInstanceOf[JdbcStatementBuilder[Transaction]], execOptions, connOptions)).name("Create Sales Per Category Table")
+  transactionStream.addSink(JdbcSink.sink("CREATE TABLE IF NOT EXISTS sales_per_category (" + "transaction_date DATE, " + "category VARCHAR(255), " + "total_sales DOUBLE PRECISION, " + "PRIMARY KEY (transaction_date, category)" + ")",
+   new JdbcStatementBuilder[Transaction] {
+     override def accept(t: PreparedStatement, u: Transaction): Unit = {}
+   },
+    execOptions, connOptions)).name("Create Sales Per Category Table")
 
   //create sales_per_day table sink
-  transactionStream.addSink(JdbcSink.sink("CREATE TABLE IF NOT EXISTS sales_per_day (" + "transaction_date DATE PRIMARY KEY, " + "total_sales DOUBLE PRECISION " + ")", (preparedStatement: PreparedStatement, transaction: Transaction) => {
-  }.asInstanceOf[JdbcStatementBuilder[Transaction]], execOptions, connOptions)).name("Create Sales Per Day Table")
+  transactionStream.addSink(JdbcSink.sink("CREATE TABLE IF NOT EXISTS sales_per_day (" + "transaction_date DATE PRIMARY KEY, " + "total_sales DOUBLE PRECISION " + ")",
+    new JdbcStatementBuilder[Transaction] {
+      override def accept(t: PreparedStatement, u: Transaction): Unit = {}
+    }, execOptions, connOptions)).name("Create Sales Per Day Table")
 
   //create sales_per_month table sink
-  transactionStream.addSink(JdbcSink.sink("CREATE TABLE IF NOT EXISTS sales_per_month (" + "year INTEGER, " + "month INTEGER, " + "total_sales DOUBLE PRECISION, " + "PRIMARY KEY (year, month)" + ")", (preparedStatement: PreparedStatement, transaction: Transaction) => {
-  
-  }.asInstanceOf[JdbcStatementBuilder[Transaction]], execOptions, connOptions)).name("Create Sales Per Month Table")
+  transactionStream.addSink(JdbcSink.sink("CREATE TABLE IF NOT EXISTS sales_per_month (" + "year INTEGER, " + "month INTEGER, " + "total_sales DOUBLE PRECISION, " + "PRIMARY KEY (year, month)" + ")",
+    new JdbcStatementBuilder[Transaction] {
+      override def accept(t: PreparedStatement, u: Transaction): Unit = {}
+    }, execOptions, connOptions)).name("Create Sales Per Month Table")
 
-  transactionStream.addSink(JdbcSink.sink("INSERT INTO transactions(transaction_id, product_id, product_name, product_category, product_price, " + "product_quantity, product_brand, total_amount, currency, customer_id, transaction_date, payment_method) " + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) " + "ON CONFLICT (transaction_id) DO UPDATE SET " + "product_id = EXCLUDED.product_id, " + "product_name  = EXCLUDED.product_name, " + "product_category  = EXCLUDED.product_category, " + "product_price = EXCLUDED.product_price, " + "product_quantity = EXCLUDED.product_quantity, " + "product_brand = EXCLUDED.product_brand, " + "total_amount  = EXCLUDED.total_amount, " + "currency = EXCLUDED.currency, " + "customer_id  = EXCLUDED.customer_id, " + "transaction_date = EXCLUDED.transaction_date, " + "payment_method = EXCLUDED.payment_method " + "WHERE transactions.transaction_id = EXCLUDED.transaction_id", (preparedStatement: PreparedStatement, transaction: Transaction) => {
-      preparedStatement.setString(1, transaction.getTransactionId)
-      preparedStatement.setString(2, transaction.getProductId)
-      preparedStatement.setString(3, transaction.getProductName)
-      preparedStatement.setString(4, transaction.getProductCategory)
-      preparedStatement.setDouble(5, transaction.getProductPrice)
-      preparedStatement.setInt(6, transaction.getProductQuantity)
-      preparedStatement.setString(7, transaction.getProductBrand)
-      preparedStatement.setDouble(8, transaction.getTotalAmount)
-      preparedStatement.setString(9, transaction.getCurrency)
-      preparedStatement.setString(10, transaction.getCustomerId)
-      preparedStatement.setTimestamp(11, transaction.getTransactionDate)
-      preparedStatement.setString(12, transaction.getPaymentMethod)
-
-  }.asInstanceOf[JdbcStatementBuilder[Transaction]], execOptions, connOptions)).name("Insert into transactions table sink")
+  transactionStream.addSink(JdbcSink.sink("INSERT INTO transactions(transaction_id, product_id, product_name, product_category, product_price, " + "product_quantity, product_brand, total_amount, currency, customer_id, transaction_date, payment_method) " + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) " + "ON CONFLICT (transaction_id) DO UPDATE SET " + "product_id = EXCLUDED.product_id, " + "product_name  = EXCLUDED.product_name, " + "product_category  = EXCLUDED.product_category, " + "product_price = EXCLUDED.product_price, " + "product_quantity = EXCLUDED.product_quantity, " + "product_brand = EXCLUDED.product_brand, " + "total_amount  = EXCLUDED.total_amount, " + "currency = EXCLUDED.currency, " + "customer_id  = EXCLUDED.customer_id, " + "transaction_date = EXCLUDED.transaction_date, " + "payment_method = EXCLUDED.payment_method " + "WHERE transactions.transaction_id = EXCLUDED.transaction_id",
+    new JdbcStatementBuilder[Transaction] {
+      override def accept(preparedStatement: PreparedStatement, transaction: Transaction): Unit = {
+        preparedStatement.setString(1, transaction.getTransactionId)
+        preparedStatement.setString(2, transaction.getProductId)
+        preparedStatement.setString(3, transaction.getProductName)
+        preparedStatement.setString(4, transaction.getProductCategory)
+        preparedStatement.setDouble(5, transaction.getProductPrice)
+        preparedStatement.setInt(6, transaction.getProductQuantity)
+        preparedStatement.setString(7, transaction.getProductBrand)
+        preparedStatement.setDouble(8, transaction.getTotalAmount)
+        preparedStatement.setString(9, transaction.getCurrency)
+        preparedStatement.setString(10, transaction.getCustomerId)
+        preparedStatement.setTimestamp(11, transaction.getTransactionDate)
+        preparedStatement.setString(12, transaction.getPaymentMethod)
+      }
+  }, execOptions, connOptions)).name("Insert into transactions table sink")
   class SalesPerCategorySelector extends KeySelector[SalesPerCategory, String]{
     override def getKey(data: SalesPerCategory): String = data.getCategory
   }
@@ -82,12 +89,14 @@ object DataStreamJobScala extends App {
      .keyBy(new SalesPerCategorySelector).reduce((salesPerCategory: SalesPerCategory, t1: SalesPerCategory) => {
       salesPerCategory.setTotalSales(salesPerCategory.getTotalSales  + t1.getTotalSales)
       salesPerCategory
-  }).addSink(JdbcSink.sink("INSERT INTO sales_per_category(transaction_date, category, total_sales) " + "VALUES (?, ?, ?) " + "ON CONFLICT (transaction_date, category) DO UPDATE SET " + "total_sales = EXCLUDED.total_sales " + "WHERE sales_per_category.category = EXCLUDED.category " + "AND sales_per_category.transaction_date = EXCLUDED.transaction_date", (preparedStatement: PreparedStatement, salesPerCategory: SalesPerCategory) => {
-      preparedStatement.setDate(1, new Date(System.currentTimeMillis))
-      preparedStatement.setString(2, salesPerCategory.getCategory)
-      preparedStatement.setDouble(3, salesPerCategory.getTotalSales)
-
-  }.asInstanceOf[JdbcStatementBuilder[SalesPerCategory]], execOptions, connOptions)).name("Insert into sales per category table")
+  }).addSink(JdbcSink.sink("INSERT INTO sales_per_category(transaction_date, category, total_sales) " + "VALUES (?, ?, ?) " + "ON CONFLICT (transaction_date, category) DO UPDATE SET " + "total_sales = EXCLUDED.total_sales " + "WHERE sales_per_category.category = EXCLUDED.category " + "AND sales_per_category.transaction_date = EXCLUDED.transaction_date",
+     new JdbcStatementBuilder[SalesPerCategory] {
+       override def accept(preparedStatement: PreparedStatement, salesPerCategory: SalesPerCategory): Unit = {
+         preparedStatement.setDate(1, new Date(System.currentTimeMillis))
+         preparedStatement.setString(2, salesPerCategory.getCategory)
+         preparedStatement.setDouble(3, salesPerCategory.getTotalSales)
+       }
+  }, execOptions, connOptions)).name("Insert into sales per category table")
 
   class SalesPerDaySelector extends KeySelector[SalesPerDay, Date]{
     override def getKey(data: SalesPerDay) = data.getTransactionDate
@@ -101,14 +110,13 @@ object DataStreamJobScala extends App {
   }).keyBy(new SalesPerDaySelector).reduce((salesPerDay: SalesPerDay, t1: SalesPerDay) => {
       salesPerDay.setTotalSales(salesPerDay.getTotalSales + t1.getTotalSales)
       salesPerDay
-  }).addSink(JdbcSink.sink("INSERT INTO sales_per_day(transaction_date, total_sales) " + "VALUES (?,?) " + "ON CONFLICT (transaction_date) DO UPDATE SET " + "total_sales = EXCLUDED.total_sales " + "WHERE sales_per_day.transaction_date = EXCLUDED.transaction_date", (preparedStatement: PreparedStatement, salesPerDay: SalesPerDay) => {
-    def foo(preparedStatement: PreparedStatement, salesPerDay: SalesPerDay) = {
+  }).addSink(JdbcSink.sink("INSERT INTO sales_per_day(transaction_date, total_sales) " + "VALUES (?,?) " + "ON CONFLICT (transaction_date) DO UPDATE SET " + "total_sales = EXCLUDED.total_sales " + "WHERE sales_per_day.transaction_date = EXCLUDED.transaction_date",
+    new JdbcStatementBuilder[SalesPerDay] {
+      override def accept(preparedStatement: PreparedStatement, salesPerDay: SalesPerDay): Unit =   {
       preparedStatement.setDate(1, new Date(System.currentTimeMillis))
       preparedStatement.setDouble(2, salesPerDay.getTotalSales)
-    }
-
-    foo(preparedStatement, salesPerDay)
-  }.asInstanceOf[JdbcStatementBuilder[SalesPerDay]], execOptions, connOptions)).name("Insert into sales per day table")
+     }
+    }, execOptions, connOptions)).name("Insert into sales per day table")
   class SalesPerMonthSelector extends KeySelector[SalesPerMonth, Int]{
     override def getKey(data: SalesPerMonth) = data.getMonth
   }
@@ -123,12 +131,14 @@ object DataStreamJobScala extends App {
       salesPerMonth.setTotalSales(salesPerMonth.getTotalSales + t1.getTotalSales)
       salesPerMonth
    
-  }).addSink(JdbcSink.sink("INSERT INTO sales_per_month(year, month, total_sales) " + "VALUES (?,?,?) " + "ON CONFLICT (year, month) DO UPDATE SET " + "total_sales = EXCLUDED.total_sales " + "WHERE sales_per_month.year = EXCLUDED.year " + "AND sales_per_month.month = EXCLUDED.month ", (preparedStatement: PreparedStatement, salesPerMonth: SalesPerMonth) => {
-      preparedStatement.setInt(1, salesPerMonth.getYear)
-      preparedStatement.setInt(2, salesPerMonth.getMonth)
-      preparedStatement.setDouble(3, salesPerMonth.getTotalSales)
-
-  }.asInstanceOf[JdbcStatementBuilder[SalesPerMonth]], execOptions, connOptions)).name("Insert into sales per month table")
+  }).addSink(JdbcSink.sink("INSERT INTO sales_per_month(year, month, total_sales) " + "VALUES (?,?,?) " + "ON CONFLICT (year, month) DO UPDATE SET " + "total_sales = EXCLUDED.total_sales " + "WHERE sales_per_month.year = EXCLUDED.year " + "AND sales_per_month.month = EXCLUDED.month ",
+    new JdbcStatementBuilder[SalesPerMonth] {
+      override def accept(preparedStatement: PreparedStatement, salesPerMonth: SalesPerMonth): Unit = {
+        preparedStatement.setInt(1, salesPerMonth.getYear)
+        preparedStatement.setInt(2, salesPerMonth.getMonth)
+        preparedStatement.setDouble(3, salesPerMonth.getTotalSales)
+      }
+  }, execOptions, connOptions)).name("Insert into sales per month table")
 
   val elasticsearchSink:Elasticsearch7SinkBuilder[Transaction] = new Elasticsearch7SinkBuilder[Transaction]()
     .setHosts(new HttpHost("localhost", 9200, "http"))
