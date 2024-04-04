@@ -81,11 +81,10 @@ object DataStreamJobScala extends App {
         preparedStatement.setString(12, transaction.getPaymentMethod)
       }
   }, execOptions, connOptions)).name("Insert into transactions table sink")
-  class SalesPerCategorySelector extends KeySelector[SalesPerCategory, String]{
-    override def getKey(data: SalesPerCategory): String = data.getCategory
-  }
    transactionStream.map(transaction => new SalesPerCategory(new Date(System.currentTimeMillis), transaction.getProductCategory, transaction.getTotalAmount))
-     .keyBy(new SalesPerCategorySelector).reduce((s, t) => {
+     .keyBy(new KeySelector[SalesPerCategory, String]{
+       override def getKey(in: SalesPerCategory): String = in.getCategory
+     }).reduce((s, t) => {
       s.setTotalSales(s.getTotalSales  + t.getTotalSales)
       s
   }).addSink(JdbcSink.sink("INSERT INTO sales_per_category(transaction_date, category, total_sales) " + "VALUES (?, ?, ?) " + "ON CONFLICT (transaction_date, category) DO UPDATE SET " + "total_sales = EXCLUDED.total_sales " + "WHERE sales_per_category.category = EXCLUDED.category " + "AND sales_per_category.transaction_date = EXCLUDED.transaction_date",
@@ -97,16 +96,15 @@ object DataStreamJobScala extends App {
        }
   }, execOptions, connOptions)).name("Insert into sales per category table")
 
-  class SalesPerDaySelector extends KeySelector[SalesPerDay, Date]{
-    override def getKey(data: SalesPerDay) = data.getTransactionDate
-  }
   transactionStream.map((transaction: Transaction) => {
 
       val transactionDate = new Date(System.currentTimeMillis)
       val totalSales = transaction.getTotalAmount
       new SalesPerDay(transactionDate, totalSales)
 
-  }).keyBy(new SalesPerDaySelector).reduce((s: SalesPerDay, t: SalesPerDay) => {
+  }).keyBy(new KeySelector[SalesPerDay, Date] {
+    override def getKey(in: SalesPerDay): Date = in.getTransactionDate
+  }).reduce((s: SalesPerDay, t: SalesPerDay) => {
       s.setTotalSales(s.getTotalSales + t.getTotalSales)
       s
   }).addSink(JdbcSink.sink("INSERT INTO sales_per_day(transaction_date, total_sales) " + "VALUES (?,?) " + "ON CONFLICT (transaction_date) DO UPDATE SET " + "total_sales = EXCLUDED.total_sales " + "WHERE sales_per_day.transaction_date = EXCLUDED.transaction_date",
@@ -116,9 +114,7 @@ object DataStreamJobScala extends App {
       preparedStatement.setDouble(2, salesPerDay.getTotalSales)
      }
     }, execOptions, connOptions)).name("Insert into sales per day table")
-  class SalesPerMonthSelector extends KeySelector[SalesPerMonth, Int]{
-    override def getKey(data: SalesPerMonth) = data.getMonth
-  }
+
   transactionStream.map((transaction: Transaction) => {
       val transactionDate = new Date(System.currentTimeMillis)
       val year = transactionDate.toLocalDate.getYear
@@ -126,7 +122,9 @@ object DataStreamJobScala extends App {
       val totalSales = transaction.getTotalAmount
       new SalesPerMonth(year, month, totalSales)
 
-  }).keyBy(new SalesPerMonthSelector).reduce((s: SalesPerMonth, t: SalesPerMonth) => {
+  }).keyBy(new KeySelector[SalesPerMonth, Int] {
+    override def getKey(in: SalesPerMonth): Int = in.getMonth
+  }).reduce((s: SalesPerMonth, t: SalesPerMonth) => {
       s.setTotalSales(s.getTotalSales + t.getTotalSales)
       s
    
